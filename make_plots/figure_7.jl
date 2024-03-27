@@ -1,9 +1,10 @@
 using LinearAlgebra,SkewLinearAlgebra, Plots, LaTeXStrings
 import .Manifold as m
 
-#Choose (n,p) the size of the Stiefel manifold
+#Choose (n,p) the size of the Stiefel manifold, N the number of samples
 n = 5
 p = 4
+N = 10000
 
 metric = 0
 
@@ -20,14 +21,14 @@ B = [1  1  1] * π / sqrt(3)
 
 S = [2A -B';
       B  0]
-N = 20
-norms = zeros(N, p)
-distances = zeros(N, p)
+N2 = 20
+norms = zeros(N2, p)
+distances = zeros(N2, p)
 for k ∈ 1:p
     U₂ = copy(U₁)
     if k == 1
-        for i ∈ 1:N
-            θ = (i / N) * π
+        for i ∈ 1:N2
+            θ = (i / N2) * π
             U₂.Q[:,1] = cos(θ)*U₁.Q[:,1] + sin(θ)*S₁.Θ.Q[:,1]
             norms[i, k] = norm(U₂.Q-U₁.Q)
             distances[i, k] = θ
@@ -35,8 +36,8 @@ for k ∈ 1:p
     elseif iseven(k)
         Q = zeros(k, k)
         #Build Q
-        for i ∈ 1:N
-            θ = (i / N) * π
+        for i ∈ 1:N2
+            θ = (i / N2) * π
             for j ∈ 1:2:k
                 Q[j:j+1, j:j+1] = [cos(θ) -sin(θ); sin(θ) cos(θ)]
             end
@@ -48,23 +49,22 @@ for k ∈ 1:p
     else
         M = zeros(k+1, k+1)
         #Build Q
-        for i ∈ 1:N
+        for i ∈ 1:N2
             for j ∈ 1:2:(k-3)
                 M[j:j+1, j:j+1] = [0 -π; π 0]
             end
             M[k-2:end, k-2:end] = S
-            U₂.Q[:, 1:k] = ([U₁.Q[:,1:k] S₁.Θ.Q[:,1]] * exp((i / N) * M))[:, 1:k]
-            U₂.Q[:, k-2:k] = U₂.Q[:, k-2:k] * exp(- (i / N) * A)
+            U₂.Q[:, 1:k] = ([U₁.Q[:,1:k] S₁.Θ.Q[:,1]] * exp((i / N2) * M))[:, 1:k]
+            U₂.Q[:, k-2:k] = U₂.Q[:, k-2:k] * exp(- (i / N2) * A)
             norms[i, k] = norm(U₂.Q-U₁.Q)
-            distances[i, k] = (i / N) * π *sqrt(k)
+            distances[i, k] = (i / N2) * π *sqrt(k)
         end
     end
 end
 norms ./= 2 * sqrt(p)
 distances  ./= π * sqrt(p)
 
-#Choose N, the number of samples.
-N = 10000
+
 Frobenius = zeros(N)
 gdistances = zeros(N)
 S = zeros(2p,2p)
