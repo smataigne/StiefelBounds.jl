@@ -17,12 +17,8 @@ for i ∈ 1:N
     Frobenius[i] = norm(Matrix(U₁ - U₂))
     S₁= m.StiefelVector(U₁, 0)
     S₂= m.StiefelVector(U₂, 0)
-    m.buildcomplement(S₁)
-    m.buildcomplement(S₂)
     Δ = m.logshooting(S₁, S₂)
-    A = U₁'*Δ
-    B = S₁.Θ.Q'*Δ
-    distances[i] = sqrt(norm(A)^2+norm(B)^2)
+    distances[i] = norm(Δ)
 end
 
 P = plot(framestyle=:box, legend=:topleft,font="Computer Modern", tickfontfamily="Computer Modern",legendfont="Computer Modern",
@@ -39,5 +35,7 @@ script_dir = @__DIR__
 path = joinpath(script_dir, "./figures/figure_3.pdf")
 display(P)
 savefig(P, path)
+path2 = joinpath(script_dir, "./figures/figure_3.png")
+savefig(P, path2)
 
 

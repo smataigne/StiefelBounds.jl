@@ -76,12 +76,8 @@ for i ∈ 1:N
     Frobenius[i] = norm(Matrix(U₃ - U₂))
     S₃= m.StiefelVector(U₃, 0)
     S₂= m.StiefelVector(U₂, 0)
-    m.buildcomplement(S₃)
-    m.buildcomplement(S₂)
     Δ = m.logshooting(S₃, S₂)
-    A₂ = U₁'*Δ
-    B₂ = S₁.Θ.Q'*Δ
-    gdistances[i] = sqrt(norm(A₂)^2+norm(B₂)^2)
+    gdistances[i] = norm(Δ)
 end
 
 t = LinRange(0, 2*sqrt(p),500)
@@ -100,3 +96,5 @@ script_dir = @__DIR__
 path = joinpath(script_dir, "./figures/figure_7.pdf")
 display(P)
 savefig(P, path)
+path2 = joinpath(script_dir, "./figures/figure_7.png")
+savefig(P, path2)

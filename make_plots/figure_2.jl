@@ -19,18 +19,14 @@ for i ∈ 1:N
     #Compute Euclidean distance
     S₁= m.StiefelVector(U₁, 0)
     S₂= m.StiefelVector(U₂, 0)
-    m.buildcomplement(S₁)
-    m.buildcomplement(S₂)
     Δ = m.logshooting(S₁, S₂)
     A = U₁'*Δ
-    B = S₁.Θ.Q'*Δ
+    B = (I - U₁.Q * U₁.Q') * Δ
     distancesEuclidean[i] = sqrt(norm(A)^2 + norm(B)^2)
 
     #Compute canonical distance
     S₁= m.StiefelVector(U₁, 1)
     S₂= m.StiefelVector(U₂, 1)
-    m.buildcomplement(S₁)
-    m.buildcomplement(S₂)
     Δ, Q = m.logβ(S₁, S₂, 0.5, 0)[1:2]
     A = Matrix(U₁)'*Δ
     B = Matrix(Q' * Δ) 
@@ -51,3 +47,5 @@ script_dir = @__DIR__
 path = joinpath(script_dir, "./figures/figure_2.pdf")
 display(P)
 savefig(P, path)
+path2 = joinpath(script_dir, "./figures/figure_2.png")
+savefig(P, path2)
