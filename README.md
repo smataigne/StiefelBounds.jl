@@ -1,5 +1,5 @@
 # StiefelBounds.jl
-This repository is associated to the publication "Mataigne S., Absil P. -A. Absil, Miolane N., Bounds on the geodesic distances on the Stiefel manifold, 2024". This article contains the theorems and corollary which are mentioned in this file.
+This repository is associated to the publication "Mataigne S., Absil P. -A. Absil, Miolane N., Bounds on the geodesic distances on the Stiefel manifold for a family of Riemannian metrics, 2024". This article contains the theorems and corollary which are mentioned in this file.
 We make available the code necessary to produce the numerical experiments presented in the figures 2, 3 and 7 from the article. 
 
 ## Requirements
