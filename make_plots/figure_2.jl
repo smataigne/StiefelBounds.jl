@@ -19,28 +19,28 @@ for i ∈ 1:N
     #Compute Euclidean distance
     S₁= m.StiefelVector(U₁, 0)
     S₂= m.StiefelVector(U₂, 0)
-    Δ = m.logshooting(S₁, S₂)
-    A = U₁'*Δ
-    B = (I - U₁.Q * U₁.Q') * Δ
+    Δ, Q = m.pshooting(S₁, S₂, 1, 10)[1:2]
+    A = U₁.Q'Δ
+    B = Q'Δ
     distancesEuclidean[i] = sqrt(norm(A)^2 + norm(B)^2)
 
     #Compute canonical distance
     S₁= m.StiefelVector(U₁, 1)
     S₂= m.StiefelVector(U₂, 1)
     Δ, Q = m.logβ(S₁, S₂, 0.5, 0)[1:2]
-    A = Matrix(U₁)'*Δ
-    B = Matrix(Q' * Δ) 
+    A = U₁.Q'*Δ
+    B = Q' * Δ 
     distancesCanonical[i] =  sqrt(0.5*norm(A)^2 + norm(B)^2)
 end
 
 P = plot(framestyle=:box, legend=:topleft,font="Computer Modern", tickfontfamily="Computer Modern",legendfont="Computer Modern",
-    legendfontsize=12,yguidefontsize=17,xguidefontsize=17, xtickfontsize = 13, ytickfontsize=13,margin = 0.3Plots.cm)
+    legendfontsize=12,yguidefontsize=17,xguidefontsize=17, xtickfontsize = 13, ytickfontsize=13, margin = 0.3Plots.cm, dpi = 1000)
  
 t = LinRange(0, π*sqrt(p), 500)
 
-scatter!( distancesEuclidean, distancesCanonical, markersize=2, markerstrokewidth=0, label = "Samples")
-plot!(t, t.*(sqrt(2)/2), linewidth = 3, label = L"\frac{\sqrt{2}}{2}d_\mathrm{E}(U, \widetilde{U})",color = :black)
-plot!(t, t, linewidth = 3, label = L"d_\mathrm{E}(U, \widetilde{U})", color =:green3, linestyle=:dash)
+scatter!( distancesEuclidean, distancesCanonical, markersize=2, markerstrokewidth=0, label = "Samples", color=:skyblue2)
+plot!(t, t.*(sqrt(2)/2), linewidth = 2, label = L"\frac{\sqrt{2}}{2}d_\mathrm{E}(U, \widetilde{U})",color = :black)
+plot!(t, t, linewidth = 2, label = L"d_\mathrm{E}(U, \widetilde{U})", color =:darkgreen, linestyle =:dot)
 xlabel!(L"d_\mathrm{E} (U, \widetilde{U})")
 ylabel!(L"d_\mathrm{c} (U, \widetilde{U})")
 script_dir = @__DIR__

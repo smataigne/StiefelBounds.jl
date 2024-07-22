@@ -2,20 +2,6 @@
 This file contains routines for computing the Riemannian exponenetial, not directly related to the article.
 """
 
-@views function expβ(S::StiefelVector{T, METRIC}, Δ::TangentVector{T, METRIC}) where {T, METRIC}
-    
-    Δ₂ = gettangent(Δ, S)
-    temp₁ = similar(Δ₂, size(Δ₂, 1), size(S, 1))
-    temp₂ = similar(Δ₂, size(S, 1), size(Δ.A, 2))
-    Exp = similar(Δ₂, size(S, 1), size(Δ.A, 2))
-    mul!(temp₁, Δ₂, S.U')
-    E₁ = exp(skewhermitian!(temp₁) .* 2)
-    E₂ = exp((1-2*METRIC) * Δ.A)
-    mul!(temp₂, S.U, E₂)
-    mul!(Exp, E₁, temp₂)
-    return Orthonormal(Exp, false)
-end
-
 @views function expβ(S::StiefelVector{T, METRIC}, Δ::AbstractMatrix) where {T, METRIC}
     Δ₂ = Δ
     temp₁ = similar(Δ₂, size(Δ₂, 1), size(S, 1))
@@ -23,9 +9,23 @@ end
     A = similar(Δ₂, size(S, 2), size(S, 2))
     Exp = similar(Δ₂, size(S, 1), size(S, 2))
     mul!(temp₁, Δ₂, transpose(S.U))
-    E₁ = exp(skewhermitian!(temp₁.*2))
-    mul!(A, transpose(S.U) , Δ, -1, 0)
-    E₂ = exp(skewhermitian!(A))
+    mul!(A, transpose(S.U) , Δ, 1, 0)
+    E₁ = exp(skewhermitian!(temp₁.*2) + 2 * (METRIC - 1) * S.U.Q * A * S.U.Q')
+    E₂ = exp(skewhermitian!((1 - 2 * METRIC) * A))
+    mul!(temp₂, S.U, E₂)
+    mul!(Exp, E₁, temp₂)
+    return Orthonormal(Exp, false)
+end
+
+@views function expβ(S::StiefelVector{T, METRIC}, Δ::TangentVector{T, METRIC}) where {T, METRIC}
+    
+    Δ₂ = gettangent(Δ, S)
+    temp₁ = similar(Δ₂, size(Δ₂, 1), size(S, 1))
+    temp₂ = similar(Δ₂, size(S, 1), size(Δ.A, 2))
+    Exp = similar(Δ₂, size(S, 1), size(Δ.A, 2))
+    mul!(temp₁, Δ₂, S.U.Q')
+    E₁ = exp(skewhermitian!(temp₁) .* 2 + 2 * (METRIC - 1) * S.U.Q * Δ.A * S.U.Q') 
+    E₂ = exp((1 - 2 * METRIC) * Δ.A)
     mul!(temp₂, S.U, E₂)
     mul!(Exp, E₁, temp₂)
     return Orthonormal(Exp, false)

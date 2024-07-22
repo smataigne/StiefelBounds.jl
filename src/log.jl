@@ -26,6 +26,36 @@
     end
     return Δ
 end
+@views  function logshootingβ(S₁::StiefelVector{T, METRIC}, S₂::StiefelVector{T, METRIC}) where {T,METRIC}
+    """
+    Shooting method from D. Bryner, "Endpoint Geodesics on the Stiefel Manifold Embedded in Euclidean Space", SIAM , https://doi.org/10.1137/16M1103099, 2017.
+    Adapted for β-metric.
+    """
+    ϵ = eps(T) * 1000
+    N = 6#ceil(Int, norm(S₁.U.Q-S₂.U.Q)) * 5
+    δt = 1 / (N - 1)
+    t = Array(0:δt:1)
+    γ = norm(S₁.U.Q - S₂.U.Q)
+    Δ = projection(S₂.U.Q, S₁)
+    Δ ./= norm(Δ)
+    Δ .*= γ
+    Δˢ = similar(Δ, size(Δ, 1), size(Δ, 2))
+    itermax = 100; iter = 0
+    A = similar(\)
+    while γ > ϵ  && iter < itermax
+        Δˢ .= Matrix(exp(S₁, Δ))
+        Δˢ .-= S₂.U
+        γ = norm(Δˢ)
+        for j = N:-1:1
+            Δˢ = projection(Δˢ, StiefelVector(exp(S₁, Δ.*t[j])))
+            Δˢ ./= norm(Δˢ)
+            Δˢ .*= γ
+        end
+        Δ .-= Δˢ
+        iter +=1
+    end
+    return Δ
+end
 
 @views function subproblem(Q::AbstractMatrix, A₀::AbstractMatrix, β::Real, max_iter::Integer)
     """
@@ -311,7 +341,7 @@ end
 end
 
 
-@views function pshooting(S₁::StiefelVector{T, METRIC}, S₂::StiefelVector{T, METRIC}, β::Real, m::Integer) where {T,METRIC}
+@views function pshooting(S₁::StiefelVector{T, METRIC}, S₂::StiefelVector{T, METRIC}, β::Real, m::Integer, A₀=false, R₀=false, Q₀=false) where {T,METRIC}
     """
     Computes the Riemannian logarithm Log(S₁,S₂) on St(n,p) equipped the β-metric.
     Implementation of Algorithm 2 from 
@@ -323,26 +353,25 @@ end
     Output: The Riemannian logarithm Δ = S₁ * A + Q * B , Q and the number of iterations performed.  
     """
     t = LinRange(0, 1, m)
-    max_iter = 1000
+    max_iter = 100
     n, p = size(S₁)
     ϵ = 1e-12
-
+    q = min(p, n - p)
     #Pre-allocating memory for efficiency
     M = zeros(T, p, p)
-    N = similar(M, p, p)
+    N = similar(M, q, p)
     V = similar(M, n, p)
     A = similar(M, p, p)
-    R = similar(M, p, p)
+    R = similar(M, q, p)
     Aˢ= similar(M, p, p)
-    Rˢ= similar(M, p, p)
-    R = similar(M, p, p)
-    S = similar(M, 2p, 2p)
+    Rˢ= similar(M, q, p)
+    S = similar(M, min(2p, n), min(2p, n))
     Sym1 = similar(M, p, p)
     Sym2 = similar(M, p, p)
-    temp = similar(M, 2p, 2p)
-    temp2 = zeros(Complex{T}, 2p, 2p)
-    temp2bis = similar(temp2, 2p, 2p)
-    MN = similar(M, 2p, p)
+    temp = similar(M, min(2p, n), min(2p, n))
+    temp2 = zeros(Complex{T},  min(2p, n), min(2p, n))
+    temp2bis = similar(temp2,  min(2p, n), min(2p, n))
+    MN = similar(M, min(2p, n), p)
     temp4 = similar(temp2, p, p)
     temp5 = similar(temp2, p, p)
     #End of memory pre-allocation
@@ -350,12 +379,23 @@ end
     mul!(M, S₁.U.Q', S₂.U.Q)
     V .= S₂.U.Q
     mul!(V, S₁.U.Q, M, -1, 1)
-    Q = orthogonalize!(V)
-    mul!(N, Q', S₂.U.Q)
+    if Q₀ ==false
+        Q = orthogonalize!(V)
+    else
+        Q =Q₀
+    end
+    mul!(N, Q[:, 1:q]', S₂.U.Q)
     ν = sqrt(β * norm(M-I)^2 + norm(N)^2)
-    A .= skewhermitian(M); R .= N
-    γ = ν / sqrt(β * norm(A)^2+ norm(N)^2)
-    A .*= γ ; R .*= γ
+    if A₀ == false
+        A .= skewhermitian(M); R .= N 
+        #Random perturbation to avoid deterministic search on a subset, e.g., R = 0.
+        #δ = norm(A); A .+= δ/4 * skewhermitian(randn(p, p))
+        #δ = norm(R); R .+= δ/4 * randn(q, p)
+        γ = ν / sqrt(β * norm(A)^2+ norm(N)^2)
+        A .*= γ ; R .*= γ
+    else
+        A .= A₀; R .= R₀
+    end
     iter = 0
     while ν > ϵ && iter<max_iter
         
@@ -405,5 +445,5 @@ end
         R .-= Rˢ 
         iter +=1 
     end
-    return S₁.U.Q * A + Q * R, Q, iter
+    return S₁.U.Q * A + Q[:, 1:q] * R, Q[:, 1:q], iter
 end
